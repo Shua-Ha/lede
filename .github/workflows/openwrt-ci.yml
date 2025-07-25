@@ -1,107 +1,108 @@
-# 
-# <https://github.com/KFERMercer/OpenWrt-CI>
 #
-# Copyright (C) 2019 P3TERX
+# <https://github.com/KFERMercer/OpenWrt-CI> # 这是文件头部注释，通常包含作者信息和项目链接。
 #
-# Copyright (C) 2020 KFERMercer
+# Copyright (C) 2019 P3TERX # 版权信息。
 #
-name: OpenWrt-CI
+# Copyright (C) 2020 KFERMercer # 版权信息。
+#
+name: OpenWrt-CI # GitHub Actions 工作流的名称，在 Actions 界面显示。
 
 on:
-  schedule:
-    - cron: 0 20 * * *
+  schedule: # 定义工作流的触发事件：定时触发。
+    - cron: 0 20 * * * # cron 表达式，表示 UTC 时间每天 20:00（即北京时间次日凌晨 4:00）触发编译。
 
-permissions:
+permissions: # 配置工作流的权限，这里只读内容。
   contents: read
 
-jobs:
+jobs: # 定义一个或多个作业（Job）。
 
-  build_openwrt:
+  build_openwrt: # 作业的 ID，这里是编译 OpenWrt 固件的作业。
 
-    name: Build OpenWrt Firmware
+    name: Build OpenWrt Firmware # 作业的显示名称。
 
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-22.04 # 指定运行该作业的虚拟机环境。这里使用 Ubuntu 22.04 LTS。
 
-    steps:
-      - name: Space cleanup and Initialization environment
-        env:
-          DEBIAN_FRONTEND: noninteractive
-        run: |
-          docker rmi `docker images -q`
-          sudo -E rm -rf /usr/share/dotnet /etc/mysql /etc/php /etc/apt/sources.list.d /usr/local/lib/android
-          sudo -E apt-mark hold grub-efi-amd64-signed
-          sudo -E apt update
-          sudo -E apt -y purge azure-cli* docker* ghc* zulu* llvm* firefox google* dotnet* powershell* openjdk* mysql* php* mongodb* dotnet* snap*
-          sudo -E apt -y full-upgrade
-          sudo -E apt -y install ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential bzip2 ccache clang cmake cpio curl device-tree-compiler flex gawk gcc-multilib g++-multilib gettext genisoimage git gperf haveged help2man intltool libc6-dev-i386 libelf-dev libfuse-dev libglib2.0-dev libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev libncurses5-dev libncursesw5-dev libpython3-dev libreadline-dev libssl-dev libtool llvm lrzsz msmtp ninja-build p7zip p7zip-full patch pkgconf python3 python3-pyelftools python3-setuptools qemu-utils rsync scons squashfs-tools subversion swig texinfo uglifyjs upx-ucl unzip vim wget xmlto xxd zlib1g-dev
-          sudo -E systemctl daemon-reload
-          sudo -E apt -y autoremove --purge
-          sudo -E apt clean
-          sudo -E timedatectl set-timezone "Asia/Shanghai"
+    steps: # 作业中包含的步骤序列。
 
-      - name: Checkout OpenWrt
-        uses: actions/checkout@v4
+      - name: Space cleanup and Initialization environment # 步骤名称：清理空间并初始化编译环境。
+        env: # 定义该步骤的环境变量。
+          DEBIAN_FRONTEND: noninteractive # 避免 apt 弹出交互式提示。
+        run: | # 执行一系列 shell 命令。
+          docker rmi `docker images -q` # 移除所有 Docker 镜像，释放磁盘空间。
+          sudo -E rm -rf /usr/share/dotnet /etc/mysql /etc/php /etc/apt/sources.list.d /usr/local/lib/android # 移除预装的开发工具和包，进一步释放空间。
+          sudo -E apt-mark hold grub-efi-amd64-signed # 锁定 grub-efi-amd64-signed 包，防止在后续升级中被意外更新导致问题。
+          sudo -E apt update # 更新 apt 包索引。
+          sudo -E apt -y purge azure-cli* docker* ghc* zulu* llvm* firefox google* dotnet* powershell* openjdk* mysql* php* mongodb* dotnet* snap* # 卸载大量预装的、编译 OpenWrt 不需要的大型软件包，大幅度节省空间。
+          sudo -E apt -y full-upgrade # 执行系统全面升级。
+          sudo -E apt -y install ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential bzip2 ccache clang cmake cpio curl device-tree-compiler flex gawk gcc-multilib g++-multilib gettext genisoimage git gperf haveged help2man intltool libc6-dev-i386 libelf-dev libfuse-dev libglib2.0-dev libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev libncurses5-dev libncursesw5-dev libpython3-dev libreadline-dev libssl-dev libtool llvm lrzsz msmtp ninja-build p7zip p7zip-full patch pkgconf python3 python3-pyelftools python3-setuptools qemu-utils rsync scons squashfs-tools subversion swig texinfo uglifyjs upx-ucl unzip vim wget xmlto xxd zlib1g-dev # 安装 OpenWrt 编译所需的所有依赖包。这个列表非常全面。
+          sudo -E systemctl daemon-reload # 重新加载 systemd 守护进程配置。
+          sudo -E apt -y autoremove --purge # 移除不再需要的依赖包和旧的配置文件。
+          sudo -E apt clean # 清理 apt 缓存。
+          sudo -E timedatectl set-timezone "Asia/Shanghai" # 设置时区为上海，用于编译时间戳等。
 
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
+      - name: Checkout OpenWrt # 步骤名称：检出 OpenWrt 源码。
+        uses: actions/checkout@v4 # 使用 actions/checkout@v4 action 来克隆当前仓库的代码到工作目录。
+
+      - name: Free Disk Space (Ubuntu) # 步骤名称：进一步释放磁盘空间。
+        uses: jlumbroso/free-disk-space@main # 使用一个专门的 action 来清理 GitHub Actions 虚拟机中的大文件。
         with:
-          # this might remove tools that are actually needed,
-          # if set to "true" but frees about 6 GB
-          tool-cache: true
-          # all of these default to true, but feel free to set to
+          # this might remove tools that are actually needed, # 注释：这可能会移除一些实际需要的工具。
+          # if set to "true" but frees about 6 GB # 注释：如果设置为 true，可以释放约 6GB 空间。
+          tool-cache: true # 清理工具缓存。
+          # all of these default to true, but feel free to set to # 注释：以下所有默认都为 true，可以根据需要设置为 false。
           # "false" if necessary for your workflow
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          swap-storage: true
+          android: true # 清理 Android SDK。
+          dotnet: true # 清理 .NET SDK。
+          haskell: true # 清理 Haskell。
+          large-packages: true # 清理其他大型预装包。
+          swap-storage: true # 清理交换空间。
 
-      - name: Update feeds
-        run: |
-          sed -i 's/#src-git helloworld/src-git helloworld/g' ./feeds.conf.default
-          ./scripts/feeds update -a
-          ./scripts/feeds install -a
+      - name: Update feeds # 步骤名称：更新 feeds。
+        run: | # 执行 shell 命令。
+          sed -i 's/#src-git helloworld/src-git helloworld/g' ./feeds.conf.default # 修改 feeds.conf.default 文件，取消 helloworld feed 的注释，使其生效。
+          ./scripts/feeds update -a # 更新所有 feeds。
+          ./scripts/feeds install -a # 安装所有 feeds 中的包。
 
-      - name: Generate configuration file
-        run: make defconfig
+      - name: Generate configuration file # 步骤名称：生成配置文件。
+        run: make defconfig # 执行 make defconfig，根据 `.config` 文件生成实际的编译配置。
 
-      - name: Download packages
-        run: make download -j16
+      - name: Download packages # 步骤名称：下载软件包源码。
+        run: make download -j16 # 下载所有编译所需的软件包源码。-j16 表示使用 16 个线程并行下载。
 
-      - name: Compile firmware
-        run: |
-          make -j$(nproc) || make -j1 V=s
-          echo "======================="
-          echo "Space usage:"
-          echo "======================="
-          df -h
-          echo "======================="
-          du -h --max-depth=1 ./ --exclude=build_dir --exclude=bin
-          du -h --max-depth=1 ./build_dir
-          du -h --max-depth=1 ./bin
+      - name: Compile firmware # 步骤名称：编译固件。
+        run: | # 执行 shell 命令。
+          make -j$(nproc) || make -j1 V=s # 使用所有可用核心编译，如果失败则回退到单线程调试模式 (V=s 打印详细日志)。
+          echo "=======================" # 打印分隔线。
+          echo "Space usage:" # 打印空间使用情况标题。
+          echo "=======================" # 打印分隔线。
+          df -h # 显示磁盘使用情况。
+          echo "=======================" # 打印分隔线。
+          du -h --max-depth=1 ./ --exclude=build_dir --exclude=bin # 显示当前目录下（除 build_dir 和 bin 外）一级目录的大小。
+          du -h --max-depth=1 ./build_dir # 显示 build_dir 目录下所有文件的大小。
+          du -h --max-depth=1 ./bin # 显示 bin 目录下所有文件的大小。
 
-      - name: Prepare artifact
-        run: |
-          mkdir -p ./artifact/package
-          mkdir -p ./artifact/buildinfo
-          rm -rf $(find ./bin/targets/ -type d -name "packages")
-          cp -rf $(find ./bin/packages/ -type f -name "*.ipk") ./artifact/package/
-          cp -rf $(find ./bin/targets/ -type f -name "*.buildinfo" -o -name "*.manifest") ./artifact/buildinfo/
+      - name: Prepare artifact # 步骤名称：准备待上传的工件。
+        run: | # 执行 shell 命令。
+          mkdir -p ./artifact/package # 创建 artifact/package 目录。
+          mkdir -p ./artifact/buildinfo # 创建 artifact/buildinfo 目录。
+          rm -rf $(find ./bin/targets/ -type d -name "packages") # 删除 bin/targets 目录下所有名为 "packages" 的子目录（通常包含固件内置的包，但此处可能是为了清理，因为ipk会在单独的bin/packages下）。
+          cp -rf $(find ./bin/packages/ -type f -name "*.ipk") ./artifact/package/ # 将所有编译生成的 .ipk 包复制到 artifact/package 目录。
+          cp -rf $(find ./bin/targets/ -type f -name "*.buildinfo" -o -name "*.manifest") ./artifact/buildinfo/ # 将 .buildinfo 和 .manifest 文件复制到 artifact/buildinfo 目录。
 
-      - name: Upload buildinfo
-        uses: actions/upload-artifact@v4
+      - name: Upload buildinfo # 步骤名称：上传编译信息。
+        uses: actions/upload-artifact@v4 # 使用 actions/upload-artifact@v4 action 上传工件。
         with:
-          name: OpenWrt_buildinfo
-          path: ./artifact/buildinfo/
+          name: OpenWrt_buildinfo # 工件的名称。
+          path: ./artifact/buildinfo/ # 工件的路径。
 
-      - name: Upload package
-        uses: actions/upload-artifact@v4
+      - name: Upload package # 步骤名称：上传软件包。
+        uses: actions/upload-artifact@v4 # 使用 actions/upload-artifact@v4 action 上传工件。
         with:
-          name: OpenWrt_package
-          path: ./artifact/package/
+          name: OpenWrt_package # 工件的名称。
+          path: ./artifact/package/ # 工件的路径。
 
-      - name: Upload firmware
-        uses: actions/upload-artifact@v4
+      - name: Upload firmware # 步骤名称：上传固件。
+        uses: actions/upload-artifact@v4 # 使用 actions/upload-artifact@v4 action 上传工件。
         with:
-          name: OpenWrt_firmware
-          path: ./bin/targets/
+          name: OpenWrt_firmware # 工件的名称。
+          path: ./bin/targets/ # 工件的路径，通常是编译好的固件镜像文件。
