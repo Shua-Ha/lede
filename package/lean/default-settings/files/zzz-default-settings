@@ -12,6 +12,20 @@ uci -q batch <<-EOF
 EOF
 uci commit system
 
+# ==================== 在这里插入您的网络配置 ====================
+uci -q batch <<-EOF
+	# 默认 IP 地址，旁路由时不会和主路由的 192.168.1.1 冲突
+	set network.lan.ipaddr='192.168.1.2'
+	set network.lan.proto='static'
+	set network.lan.type='bridge'
+	set network.lan.ifname='eth0' # 网络端口：默认 eth0，第一个接口 (请根据实际硬件调整)
+	set network.lan.netmask='255.255.255.0'
+	set network.lan.gateway='192.168.1.1' # 默认网关地址（主路由 IP）
+	set network.lan.dns='192.168.1.1' # 默认上游 DNS 地址
+EOF
+uci commit network # 提交网络配置更改
+# ================================================================
+
 rm -f /usr/lib/lua/luci/view/admin_status/index/mwan.htm
 rm -f /usr/lib/lua/luci/view/admin_status/index/upnp.htm
 rm -f /usr/lib/lua/luci/view/admin_status/index/ddns.htm
