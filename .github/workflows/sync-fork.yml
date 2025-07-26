@@ -18,6 +18,6 @@ jobs:
           token: ${{ secrets.PERSONAL_TOKEN }}
           auto_approve: true
           owner: coolsnowwolf # fork 的上游仓库 user
-          repo: lede
+#          repo: lede
           head: master # fork 的上游仓库 branch
           base: master # 本地仓库 branch
