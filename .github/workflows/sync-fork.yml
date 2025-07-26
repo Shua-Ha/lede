@@ -13,9 +13,11 @@ jobs:
   repo-sync:
     runs-on: ubuntu-latest
     steps:
-      - uses: tgymnich/fork-sync@v1.8
+      - uses: tgymnich/fork-sync@v2.0.10
         with:
           token: ${{ secrets.PERSONAL_TOKEN }}
+          auto_approve: true
           owner: coolsnowwolf # fork 的上游仓库 user
+          repo: lede
           head: master # fork 的上游仓库 branch
           base: master # 本地仓库 branch
