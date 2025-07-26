@@ -29,21 +29,14 @@ jobs: # 定义一个或多个作业（Job）。
         env: # 定义该步骤的环境变量。
           DEBIAN_FRONTEND: noninteractive # 避免 apt 弹出交互式提示。
         run: | # 执行一系列 shell 命令,添加一些必要得构建依赖。
-          sudo apt update
-          sudo apt install -y ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential \
-          bzip2 ccache clang cmake cpio curl device-tree-compiler flex gawk gcc-multilib g++-multilib gettext \
-          genisoimage git gperf haveged help2man intltool libc6-dev-i386 libelf-dev libfuse-dev libglib2.0-dev \
-          libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev libncurses5-dev libncursesw5-dev libpython3-dev \
-          libreadline-dev libssl-dev libtool llvm lrzsz msmtp ninja-build p7zip p7zip-full patch pkgconf \
-          python3 python3-pyelftools python3-setuptools qemu-utils rsync scons squashfs-tools subversion \
-          swig texinfo uglifyjs upx-ucl unzip vim wget xmlto xxd zlib1g-dev
           docker rmi `docker images -q` # 移除所有 Docker 镜像，释放磁盘空间。
           sudo -E rm -rf /usr/share/dotnet /etc/mysql /etc/php /etc/apt/sources.list.d /usr/local/lib/android # 移除预装的开发工具和包，进一步释放空间。
           sudo -E apt-mark hold grub-efi-amd64-signed # 锁定 grub-efi-amd64-signed 包，防止在后续升级中被意外更新导致问题。
           sudo -E apt update # 更新 apt 包索引。
           sudo -E apt -y purge azure-cli* docker* ghc* zulu* llvm* firefox google* dotnet* powershell* openjdk* mysql* php* mongodb* dotnet* snap* # 卸载大量预装的、编译 OpenWrt 不需要的大型软件包，大幅度节省空间。
           sudo -E apt -y full-upgrade # 执行系统全面升级。
-          sudo -E apt -y install ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential bzip2 ccache clang cmake cpio curl device-tree-compiler flex gawk gcc-multilib g++-multilib gettext genisoimage git gperf haveged help2man intltool libc6-dev-i386 libelf-dev libfuse-dev libglib2.0-dev libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev libncurses5-dev libncursesw5-dev libpython3-dev libreadline-dev libssl-dev libtool llvm lrzsz msmtp ninja-build p7zip p7zip-full patch pkgconf python3 python3-pyelftools python3-setuptools qemu-utils rsync scons squashfs-tools subversion swig texinfo uglifyjs upx-ucl unzip vim wget xmlto xxd zlib1g-dev # 安装 OpenWrt 编译所需的所有依赖包。这个列表非常全面。
+          # 安装 OpenWrt 编译所需的所有依赖包。这个列表非常全面。
+          sudo -E apt -y install ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential bzip2 ccache clang cmake cpio curl device-tree-compiler flex gawk gcc-multilib g++-multilib gettext genisoimage git gperf haveged help2man intltool libc6-dev-i386 libelf-dev libfuse-dev libglib2.0-dev libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev libncurses5-dev libncursesw5-dev libpython3-dev libreadline-dev libssl-dev libtool llvm lrzsz msmtp ninja-build p7zip p7zip-full patch pkgconf python3 python3-pyelftools python3-setuptools qemu-utils rsync scons squashfs-tools subversion swig texinfo uglifyjs upx-ucl unzip vim wget xmlto xxd zlib1g-dev
           sudo -E systemctl daemon-reload # 重新加载 systemd 守护进程配置。
           sudo -E apt -y autoremove --purge # 移除不再需要的依赖包和旧的配置文件。
           sudo -E apt clean # 清理 apt 缓存。
@@ -51,6 +44,23 @@ jobs: # 定义一个或多个作业（Job）。
 
       - name: Checkout OpenWrt # 步骤名称：检出 OpenWrt 源码。
         uses: actions/checkout@v4 # 使用 actions/checkout@v4 action 来克隆当前仓库的代码到工作目录。
+
+      # --- 缓存步骤 ---
+      - name: Cache build directories # 缓存 OpenWrt 编译目录
+        uses: actions/cache@v4
+        with:
+          path: |
+            build_dir # 编译中间文件
+            staging_dir # 编译工具链和库
+            dl # 软件包源码包
+            feeds # feeds 内容 (如果经常更新 feeds 或依赖)
+          # 使用一个综合的 key，确保缓存内容在配置或源码变化时失效
+          # hashFiles() 会基于文件的内容生成哈希，如果内容变了，key就会变，缓存就会失效
+          key: ${{ runner.os }}-openwrt-${{ hashFiles('config/.config') }}-${{ hashFiles('targets/**', 'package/**', 'toolchain/**', 'feeds.conf.default', 'feeds/*/*.mk') }}
+          restore-keys: | # 尝试恢复旧版本的缓存
+            ${{ runner.os }}-openwrt-${{ hashFiles('config/.config') }}
+            ${{ runner.os }}-openwrt-
+        # --- 缓存步骤结束 ---
 
       - name: Free Disk Space (Ubuntu) # 步骤名称：进一步释放磁盘空间。
         uses: jlumbroso/free-disk-space@main # 使用一个专门的 action 来清理 GitHub Actions 虚拟机中的大文件。
