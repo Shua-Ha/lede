@@ -57,25 +57,23 @@ jobs: # 定义一个或多个作业（Job）。
           large-packages: true # 清理其他大型预装包。
           swap-storage: true # 清理交换空间。
 
-      # ==================== 重新添加编译 po2lmo 的步骤 用于编译OpenClash ====================
-      - name: Compile and Install po2lmo # 编译并安装 po2lmo 工具
-        run: |
-          echo "Cloning po2lmo source and compiling..."
-          git clone --depth 1 https://github.com/openwrt/luci.git /tmp/luci_po2lmo_temp
-          pushd /tmp/luci_po2lmo_temp/tools/po2lmo
-          make && sudo make install
-          popd
-          rm -rf /tmp/luci_po2lmo_temp # 清理临时文件
-      # ====================================================================
-
       - name: Update feeds # 步骤名称：更新 feeds。
         run: | # 执行 shell 命令。
           sed -i 's/#src-git helloworld/src-git helloworld/g' ./feeds.conf.default # 修改 feeds.conf.default 文件，取消 helloworld feed 的注释，使其生效。
           ./scripts/feeds update -a # 更新所有 feeds。
           ./scripts/feeds install -a # 安装所有 feeds 中的包。
 
-      - name: Generate configuration file # 步骤名称：生成配置文件。
-        run: make defconfig # 执行 make defconfig，根据 `.config` 文件生成实际的编译配置。
+      - name: Apply custom configuration (diff.config) # 新增步骤：应用自定义配置 (diff.config)
+        run: |
+          # 首先，生成一个默认的 .config 作为基准
+          make defconfig
+          # 将您的自定义 diff.config 内容追加到 .config 文件中
+          cat .github/workflows/diff.config >> .config
+          # 再次运行 make defconfig，以解析并应用 diff.config 中的更改，并处理所有依赖
+          make defconfig
+
+#      - name: Generate configuration file # 步骤名称：生成配置文件。
+#        run: make defconfig # 执行 make defconfig，根据 `.config` 文件生成实际的编译配置。
 
       - name: Download packages # 步骤名称：下载软件包源码。
         run: make download -j16 # 下载所有编译所需的软件包源码。-j16 表示使用 16 个线程并行下载。
