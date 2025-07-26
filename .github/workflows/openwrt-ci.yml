@@ -8,6 +8,7 @@
 name: OpenWrt-CI # GitHub Actions 工作流的名称，在 Actions 界面显示。
 
 on:
+  workflow_dispatch: # 添加这一行，允许手动触发
   schedule: # 定义工作流的触发事件：定时触发。
     - cron: 0 20 * * * # cron 表达式，表示 UTC 时间每天 20:00（即北京时间次日凌晨 4:00）触发编译。
 
