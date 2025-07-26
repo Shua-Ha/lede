@@ -1,0 +1,43 @@
+name: Sync Fork with Upstream # 工作流名称，清晰表明其目的
+
+on:
+  workflow_dispatch: # 允许手动触发，以便您随时手动同步
+  schedule:
+    - cron: '0 19 * * *' #表示 UTC 时间每天 19:00（即北京时间次日凌晨 3:00）触发编译。
+
+permissions:
+  contents: write # 授予写入权限，以便工作流可以将变更推送到您的仓库
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest # 使用最新的 Ubuntu Runner
+
+    steps:
+      - name: Checkout your fork # 步骤1：检出您的 Fork 仓库
+        uses: actions/checkout@v4
+        with:
+          # GitHub token，用于授权 Git 操作，通常由 GitHub 自动提供
+          token: ${{ secrets.GITHUB_TOKEN }}
+          # 您要同步的分支，这里假设是 main 分支
+          ref: main
+
+      - name: Set up upstream remote # 步骤2：添加上游仓库为远程仓库
+        run: |
+          # 将 'https://github.com/coolsnowwolf/lede.git' 替换为上游 OpenWrt 仓库的实际 URL
+          git remote add upstream https://github.com/coolsnowwolf/lede.git 
+          git remote -v # 验证远程仓库是否添加成功
+
+      - name: Fetch from upstream # 步骤3：从上游仓库拉取变更
+        run: git fetch upstream
+
+      - name: Merge upstream into your fork # 步骤4：将上游变更合并到您的分支
+        run: git merge upstream/main # 替换 'main' 为您要同步的上游分支名
+
+      - name: Push changes to your fork # 步骤5：将合并后的变更推送到您的 Fork 仓库
+        run: git push origin main # 替换 'main' 为您的 Fork 仓库要推送的分支名
+
+      - name: Check for merge conflicts # 可选步骤：检查是否有合并冲突（如果上面步骤失败，这里会体现）
+        if: failure() # 只有当上一步失败时才运行
+        run: |
+          echo "Merge conflict detected! Please resolve manually.(检测到合并冲突！请手动解决)"
+          exit 1 # 标记作业失败
