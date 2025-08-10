@@ -85,10 +85,8 @@ jobs: # 定义一个或多个作业（Job）。
 
       - name: Apply custom configuration (diff.config) # 新增步骤：应用自定义配置 (diff.config)
         run: |
-          # 首先，生成一个默认的 .config 作为基准
-          make defconfig
-          # 将您的自定义 diff.config 内容追加到 .config 文件中
-          cat .github/workflows/diff.config >> .config
+          # 根据您的自定义 diff.config 内容创建 .config 文件
+          cp .github/workflows/diff.config .config
           # 再次运行 make defconfig，以解析并应用 diff.config 中的更改，并处理所有依赖
           make defconfig
 
@@ -100,6 +98,8 @@ jobs: # 定义一个或多个作业（Job）。
 
       - name: Compile firmware # 步骤名称：编译固件。
         run: | # 执行 shell 命令。
+          echo 'export CC="gcc-11"' >> $GITHUB_ENV  # 明确指定编译器版本
+          echo 'export CXX="g++-11"' >> $GITHUB_ENV # 明确指定编译器版本
           make -j$(nproc) || make -j1 V=s # 使用所有可用核心编译，如果失败则回退到单线程调试模式 (V=s 打印详细日志)。
           echo "=======================" # 打印分隔线。
           echo "Space usage:" # 打印空间使用情况标题。
