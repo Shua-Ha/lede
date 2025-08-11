@@ -9,8 +9,8 @@ name: OpenWrt-CI # GitHub Actions 工作流的名称，在 Actions 界面显示�
 
 on:
   workflow_dispatch: # 添加这一行，允许手动触发
-  schedule: # 定义工作流的触发事件：定时触发。
-    - cron: 0 20 * * * # cron 表达式，表示 UTC 时间每天 20:00（即北京时间次日凌晨 4:00）触发编译。
+  #schedule: # 定义工作流的触发事件：定时触发。
+  #  - cron: 0 20 * * * # cron 表达式，表示 UTC 时间每天 20:00（即北京时间次日凌晨 4:00）触发编译。
 
 permissions: # 配置工作流的权限，这里只读内容。
   contents: read
@@ -134,4 +134,5 @@ jobs: # 定义一个或多个作业（Job）。
         uses: actions/upload-artifact@v4 # 使用 actions/upload-artifact@v4 action 上传工件。
         with:
           name: OpenWrt_firmware # 工件的名称。
+
           path: ./bin/targets/ # 工件的路径，通常是编译好的固件镜像文件。
